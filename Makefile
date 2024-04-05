@@ -1,8 +1,10 @@
 NAME:=gcr.io/distroless/static-debian12
 
-build:
+build: chunk
+
+chunk:
 	mkdir -p bin
-	go build -o bin/chunk chunk.go
+	go build -o bin/chunk cmd/chunk/chunk.go
 
 venv:
 	python3 -m venv venv
