@@ -7,13 +7,13 @@ mkdir -p manifests
 
 flat_name=$(echo "$1" | sed 's/[\/:]/_/g')
 
-crane manifest --platform linux/amd64 $1 > manifests/$flat_name
+crane manifest --platform linux/amd64 "$1" > "manifests/$flat_name"
 
-layers=$(cat manifests/$flat_name | jq -r '.layers.[].digest')
+layers=$( jq -r '.layers.[].digest' < "manifests/$flat_name" )
 for layer in $layers; do
     if [ ! -e "layers/$layer" ]; then
         echo "Fetch layer ${layer}"
-        crane blob ${1}@${layer} > layers/${layer}
+        crane blob "${1}@${layer}" > "layers/${layer}"
     else
         echo "Cached layer ${layer}"
     fi;
