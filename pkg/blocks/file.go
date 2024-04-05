@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"os"
 	"strconv"
 	"strings"
 )
@@ -60,4 +61,23 @@ func (b Blocks) Diff(other Blocks) int {
 		}
 	}
 	return cpt
+}
+
+func (b Blocks) DiffSize(other Blocks) (int, error) {
+	size := 0
+	left := b.set()
+	for _, block := range other {
+		_, ok := left[block.Hash]
+		if ok {
+			chunk := fmt.Sprintf("smr/%s.zst", block.Hash)
+			info, err := os.Stat(chunk)
+			if err != nil {
+				return 0, err
+			}
+			size += int(info.Size())
+		}
+	}
+
+	return size, nil
+
 }

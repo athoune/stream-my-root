@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/athoune/stream-my-root/pkg/blocks"
+	"github.com/dustin/go-humanize"
 )
 
 func main() {
@@ -24,11 +25,17 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	common_size, err := aa.DiffSize(bb)
+	if err != nil {
+		panic(err)
+	}
 	fmt.Printf(`A: %d chunks, %d unique chunks
 B: %d chunks, %d unique chunks
-B has %d chunks in common with A
+B has %d chunks in common with A, %s
 `,
 		len(aa), aa.Distinct(),
 		len(bb), bb.Distinct(),
-		aa.Diff(bb))
+		aa.Diff(bb),
+		humanize.Bytes(uint64(common_size)),
+	)
 }
