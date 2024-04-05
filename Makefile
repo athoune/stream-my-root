@@ -1,4 +1,5 @@
 NAME:=gcr.io/distroless/static-debian12
+FLAT_NAME=$(shell echo $(NAME) | sed 's/[\/:]/_/g')
 
 build: chunk diff
 
@@ -20,16 +21,17 @@ venv/bin/docker-squash: venv
 
 squash: venv/bin/docker-squash
 
-out/img.tar: squash
-	mkdir -p out
+out/$(FLAT_NAME).tar: squash
+	mkdir -p out/squashed
 	./venv/bin/docker-squash $(NAME)  --output-path out/img.tar
+	cd out/squashed && \
+	tar -xvf ../img.tar
+	mv `find out/squashed -name layer.tar | head -n1` out/$(FLAT_NAME).tar
+	rm -rf out/squashed
+	rm out/img.tar
 
-out/the_layer.tar: out/img.tar
-	cd out && \
-	tar -xvf img.tar && \
-	ln -sf `find . -name layer.tar | head -n1` the_layer.tar
-
-img: out/the_layer.tar
+img: out/$(FLAT_NAME).tar
+	ln -sf $(FLAT_NAME).tar out/the_layer.tar
 	docker run \
 		-ti \
 		--rm \
@@ -41,7 +43,8 @@ img: out/the_layer.tar
 		--security-opt apparmor:unconfined \
 		make_ext4 \
 		tar2img.sh
-# make_ext4fs -l 1G -b 64k -L stream -g 256 toto.img
+	rm out/the_layer.tar
+	mv out/root.img out/$(FLAT_NAME).img
 
 clean:
 	rm -rf out
