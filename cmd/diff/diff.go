@@ -24,5 +24,11 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(len(aa), len(bb), aa.Diff(bb))
+	fmt.Printf(`A: %d chunks, %d unique chunks
+B: %d chunks, %d unique chunks
+B has %d chunks in common with A
+`,
+		len(aa), aa.Distinct(),
+		len(bb), bb.Distinct(),
+		aa.Diff(bb))
 }

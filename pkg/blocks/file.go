@@ -37,8 +37,21 @@ func ReadRecipe(f io.Reader) (Blocks, error) {
 	return blocks, nil
 }
 
+func (b Blocks) set() map[string]interface{} {
+	// FIXME maybe some caching
+	s := make(map[string]interface{})
+	for _, block := range b {
+		s[block.Hash] = new(interface{})
+	}
+	return s
+}
+
+func (b Blocks) Distinct() int {
+	return len(b.set())
+}
+
 func (b Blocks) Diff(other Blocks) int {
-	left := make(map[string]interface{})
+	left := b.set()
 	for _, block := range b {
 		left[block.Hash] = new(interface{})
 	}
