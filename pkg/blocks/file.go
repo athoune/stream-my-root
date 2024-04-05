@@ -52,9 +52,6 @@ func (b Blocks) Distinct() int {
 
 func (b Blocks) Diff(other Blocks) int {
 	left := b.set()
-	for _, block := range b {
-		left[block.Hash] = new(interface{})
-	}
 	cpt := 0
 	for _, block := range other {
 		_, ok := left[block.Hash]
