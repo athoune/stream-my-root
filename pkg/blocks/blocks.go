@@ -6,7 +6,11 @@ import (
 	"fmt"
 	"io"
 	"os"
+
+	"github.com/klauspost/compress/zstd"
 )
+
+var encoder, _ = zstd.NewWriter(nil)
 
 func isEmpty(buffer []byte) bool {
 	for _, b := range buffer {
@@ -69,7 +73,7 @@ func ChunkRawFile(path string) error {
 		if err != nil {
 			return err
 		}
-		p := fmt.Sprintf("smr/%s", h)
+		p := fmt.Sprintf("smr/%s.zst", h)
 		_, err = os.Stat(p)
 		if err != nil {
 			if !os.IsNotExist(err) {
@@ -79,7 +83,7 @@ func ChunkRawFile(path string) error {
 			if err != nil {
 				return err
 			}
-			_, err = f.Write(content)
+			_, err = f.Write(encoder.EncodeAll(content, make([]byte, 0, len(content))))
 			if err != nil {
 				return err
 			}

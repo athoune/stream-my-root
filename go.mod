@@ -3,6 +3,7 @@ module github.com/athoune/stream-my-root
 go 1.22.1
 
 require (
+	github.com/klauspost/compress v1.17.7
 	github.com/pojntfx/go-nbd v0.3.2
 	github.com/stretchr/testify v1.9.0
 )
