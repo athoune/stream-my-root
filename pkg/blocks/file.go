@@ -64,18 +64,22 @@ func (b Blocks) Diff(other Blocks) int {
 }
 
 func (b Blocks) DiffSize(other Blocks) (int, error) {
-	size := 0
 	left := b.set()
+	common := make(map[string]interface{})
 	for _, block := range other {
 		_, ok := left[block.Hash]
 		if ok {
-			chunk := fmt.Sprintf("smr/%s.zst", block.Hash)
-			info, err := os.Stat(chunk)
-			if err != nil {
-				return 0, err
-			}
-			size += int(info.Size())
+			common[block.Hash] = new(interface{})
 		}
+	}
+	size := 0
+	for _, block := range other {
+		chunk := fmt.Sprintf("smr/%s.zst", block.Hash)
+		info, err := os.Stat(chunk)
+		if err != nil {
+			return 0, err
+		}
+		size += int(info.Size())
 	}
 
 	return size, nil
