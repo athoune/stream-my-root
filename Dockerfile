@@ -1,4 +1,4 @@
-FROM make_ext4
+FROM make_ext4fs:openwrt
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         ca-certificates \
