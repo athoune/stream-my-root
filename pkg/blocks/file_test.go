@@ -20,9 +20,9 @@ func TestReadRecipe(t *testing.T) {
 10 77af8fcd75962a55e656e15b5a359c084e2fba6df8018cd088982f8477f14f12`
 	blocks, err := ReadRecipe(bytes.NewBufferString(raw))
 	assert.NoError(t, err)
-	assert.Len(t, blocks, 10)
-	assert.Equal(t, 0, blocks[0].Seek)
-	assert.Equal(t, "f2e25b21bbbd8feff3e1ad4c97aa4bb0f366a45c7b74c67149538caaf221a83e", blocks[0].Hash)
+	assert.Len(t, blocks.Blocks, 10)
+	assert.Equal(t, 0, blocks.Blocks[0].Seek)
+	assert.Equal(t, "f2e25b21bbbd8feff3e1ad4c97aa4bb0f366a45c7b74c67149538caaf221a83e", blocks.Blocks[0].Hash)
 }
 
 func TestDiff(t *testing.T) {

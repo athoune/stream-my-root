@@ -33,8 +33,8 @@ func main() {
 B: %d chunks, %d unique chunks
 B has %d chunks in common with A, %s
 `,
-		len(aa), aa.Distinct(),
-		len(bb), bb.Distinct(),
+		aa.NumberOfBlocks(), aa.Distinct(),
+		bb.NumberOfBlocks(), bb.Distinct(),
 		aa.Diff(bb),
 		humanize.Bytes(uint64(common_size)),
 	)
