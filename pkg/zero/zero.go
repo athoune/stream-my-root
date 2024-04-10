@@ -2,6 +2,7 @@ package zero
 
 import "io"
 
+// Zero is a block full of zeros, implementing ReadAt
 type Zero struct {
 	size int64
 }
