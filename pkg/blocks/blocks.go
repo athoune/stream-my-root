@@ -60,12 +60,3 @@ func (b *Blocks) BlocksForReadingAt(p []byte, off int64) ([]*Block, int64, error
 func (b *Blocks) NumberOfBlocks() int {
 	return len(b.Blocks)
 }
-
-func Rtrim(buffer []byte) []byte {
-	for i := len(buffer); i > 0; i-- {
-		if buffer[i-1] != 0 {
-			return buffer[:i]
-		}
-	}
-	return []byte{}
-}
