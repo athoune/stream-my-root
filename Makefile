@@ -1,10 +1,26 @@
 NAME:=gcr.io/distroless/static-debian12
 FLAT_NAME=$(shell echo $(NAME) | sed 's/[\/:]/_/g')
 
-build: chunk diff
+build: chunk diff server fsck
 
 docker:
 	docker build -t stream_my_root .
+
+nbd-client:
+	docker build -f Dockerfile.client -t nbd-client .
+
+client:
+	docker run \
+		-ti \
+		--rm \
+		--cap-add SYS_ADMIN \
+		--device /dev/fuse \
+		--cap-add SYS_ADMIN \
+		--security-opt apparmor:unconfined \
+		nbd-client
+
+docker-server:
+	docker image build -f Dockerfile.server -t smr-server .
 
 bin:
 	mkdir -p bin
@@ -14,6 +30,9 @@ chunk: bin
 
 diff: bin
 	go build -o bin/diff cmd/diff/diff.go
+
+fsck: bin
+	go build -o bin/fsck cmd/fsck/fsck.go
 
 img:
 	ln -sf $(FLAT_NAME).tar out/the_layer.tar
