@@ -3,6 +3,15 @@ FLAT_NAME=$(shell echo $(NAME) | sed 's/[\/:]/_/g')
 
 build: chunk diff server fsck
 
+test:
+	 go test \
+		-timeout 30s \
+		-cover \
+		github.com/athoune/stream-my-root/pkg/blocks \
+		github.com/athoune/stream-my-root/pkg/chunk \
+		github.com/athoune/stream-my-root/pkg/trimmed \
+		github.com/athoune/stream-my-root/pkg/zero
+
 fuzz:
 	go test -fuzz=Fuzz -fuzztime 10s ./pkg/trimmed
 
