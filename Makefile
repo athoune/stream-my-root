@@ -3,6 +3,9 @@ FLAT_NAME=$(shell echo $(NAME) | sed 's/[\/:]/_/g')
 
 build: chunk diff server fsck
 
+fuzz:
+	go test -fuzz=Fuzz -fuzztime 10s ./pkg/trimmed
+
 docker:
 	docker build -t stream_my_root .
 

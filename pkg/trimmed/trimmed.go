@@ -37,28 +37,32 @@ func Rtrim(buffer []byte) []byte {
 	return []byte{}
 }
 
-func min(a, b int64) int64 {
-	if a < b {
-		return a
-	}
-	return b
-}
-
 func (s *Trimmed) ReadAt(p []byte, start int64) (n int, err error) {
-	if start >= int64(s.size) {
+	if start >= int64(s.size) { // too far
 		return 0, io.EOF
 	}
-	end := min(int64(s.size), start+int64(len(p)))
-	short := int64(len(s.values))
-	if start < short {
-		n = copy(p, s.values[start:short])
+	end := int64(len(p))
+	if end > int64(s.size) {
+		end = int64(s.size)
+	}
+	non_zero := int64(len(s.values))
+
+	if start <= non_zero { // real values are available
+		n = copy(p, s.values[start:non_zero])
 	}
 
-	if end > short {
-		for i := short; i < end; i++ {
-			p[i] = 0
-		}
-		n += int(end - short)
+	if end <= non_zero { // enough values are wrote
+		return
 	}
+
+	// tacit zeros
+	for i := int64(n); i < end; i++ {
+		if int(i) == len(p) {
+			panic(fmt.Sprintln("array panic",
+				"i", i, "start", start, "len(p)", len(p), "non_zero", non_zero, "end", end, "n", n))
+		}
+		p[i] = 0
+	}
+	n += int(end - non_zero)
 	return
 }
