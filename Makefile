@@ -46,6 +46,9 @@ diff: bin
 fsck: bin
 	go build -o bin/fsck cmd/fsck/fsck.go
 
+debug: bin
+	go build -o bin/debug cmd/debug/debug.go
+
 img:
 	ln -sf $(FLAT_NAME).tar out/the_layer.tar
 	docker run \
