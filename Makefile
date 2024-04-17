@@ -1,5 +1,6 @@
 NAME:=gcr.io/distroless/static-debian12
 FLAT_NAME=$(shell echo $(NAME) | sed 's/[\/:]/_/g')
+FUZZ_TIME:=10
 
 build: chunk diff server fsck
 
@@ -12,8 +13,13 @@ test:
 		github.com/athoune/stream-my-root/pkg/trimmed \
 		github.com/athoune/stream-my-root/pkg/zero
 
-fuzz:
-	go test -fuzz=Fuzz -fuzztime 10s ./pkg/trimmed
+fuzz-trimmed:
+	go test -fuzz=Fuzz -fuzztime $(FUZZ_TIME)s ./pkg/trimmed
+
+fuzz-blocks:
+	go test -fuzz=Fuzz -fuzztime $(FUZZ_TIME)s ./pkg/blocks
+
+fuzz: fuzz-trimmed fuzz-blocks
 
 docker:
 	docker build -t stream_my_root .
