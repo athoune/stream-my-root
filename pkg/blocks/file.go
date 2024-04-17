@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-func (b Blocks) set() map[string]interface{} {
+func (b Recipe) set() map[string]interface{} {
 	// FIXME maybe some caching
 	s := make(map[string]interface{})
 	for _, block := range b.Blocks {
@@ -14,11 +14,11 @@ func (b Blocks) set() map[string]interface{} {
 	return s
 }
 
-func (b *Blocks) Distinct() int {
+func (b *Recipe) Distinct() int {
 	return len(b.set())
 }
 
-func (b *Blocks) Diff(other *Blocks) int {
+func (b *Recipe) Diff(other *Recipe) int {
 	left := b.set()
 	cpt := 0
 	for _, block := range other.Blocks {
@@ -30,7 +30,7 @@ func (b *Blocks) Diff(other *Blocks) int {
 	return cpt
 }
 
-func (b *Blocks) DiffSize(other *Blocks) (int, error) {
+func (b *Recipe) DiffSize(other *Recipe) (int, error) {
 	left := b.set()
 	common := make(map[string]interface{})
 	for _, block := range other.Blocks {
