@@ -1,0 +1,3 @@
+[submodule "contrib/resurrected-make-ext4fs"]
+	path = contrib/resurrected-make-ext4fs
+	url = ../resurrected-make-ext4fs
