@@ -2,6 +2,15 @@
 
 [On-demand Container Loading in AWS Lambda](https://arxiv.org/abs/2305.13162)
 
+* [x] Build desterministic blocks from oci/docker images
+* [x] Expose chunks as nbd
+* [ ] Expose chunks without nbd
+* [ ] Image is writable, with a COW and a map
+* [ ] Chunks are crypted, recipe has keys
+* [ ] Don't compress, just trimme zeros
+* [ ] Lazy download chunks with HTTP
+* [ ] Build the list of needed chunks to start an image
+* [ ] Garbage collect unused chunks
 
 ## Test it
 
