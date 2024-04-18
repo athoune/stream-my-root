@@ -64,11 +64,23 @@ Mount the image (from a Linux)
 ```bash
 # split your tmux with ctrl-% and watch the kernel yelling at nbd
 tail -f /var/log/kern.log
+# nbd module should be loaded
+sudo modprobe nbd
 sudo nbd-client -N smr localhost 10809 /dev/nbd1
 sudo mkdir /mnt/smr
 sudo mount -o ro -t ext4 /dev/nbd1 /mnt/smr
 ls /mnt/smr
 ```
+
+Mount from a VM on a Mac
+
+It works with
+
+* [Lima](https://lima-vm.io) `brew install lima`
+* [Multipass](https://multipass.run/) `brew install multipass`
+* Vagrant
+
+Don't use `localhost` but the host IP.
 
 ## Stuff to read
 
