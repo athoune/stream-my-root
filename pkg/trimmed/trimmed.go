@@ -23,7 +23,7 @@ func NewTrimmed(v []byte, size int) (*Trimmed, error) {
 		return nil, fmt.Errorf("array length must shorter than size : len(%s) < %d", v, size)
 	}
 	return &Trimmed{
-		values: Rtrim(v),
+		values: Rtrim(v), // FIXME don't trim data from the pool
 		size:   size,
 	}, nil
 }
@@ -37,32 +37,30 @@ func Rtrim(buffer []byte) []byte {
 	return []byte{}
 }
 
-func (s *Trimmed) ReadAt(p []byte, start int64) (n int, err error) {
-	if start >= int64(s.size) { // too far
+func (s *Trimmed) ReadAt(p []byte, src_start int64) (n int, err error) {
+	if src_start >= int64(s.size) { // too far
 		return 0, io.EOF
 	}
-	end := int64(len(p))
-	if end > int64(s.size) {
-		end = int64(s.size)
+	size := s.size - int(src_start)
+	if size > len(p) {
+		size = len(p)
 	}
+	src_end := src_start + int64(size)
 	non_zero := int64(len(s.values))
 
-	if start <= non_zero { // real values are available
-		n = copy(p, s.values[start:non_zero])
+	if src_start < non_zero { // real values are available
+		n = copy(p, s.values[src_start:non_zero])
 	}
 
-	if end <= non_zero { // enough values are wrote
+	if src_end <= non_zero { // enough values are wrote
 		return
 	}
 
+	zero_start := int64(n)
 	// tacit zeros
-	for i := int64(n); i < end; i++ {
-		if int(i) == len(p) {
-			panic(fmt.Sprintln("array panic",
-				"i", i, "start", start, "len(p)", len(p), "non_zero", non_zero, "end", end, "n", n))
-		}
+	for i := zero_start; i < int64(size); i++ {
 		p[i] = 0
 	}
-	n += int(end - non_zero)
+	n += size - int(zero_start)
 	return
 }

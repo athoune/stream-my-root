@@ -22,23 +22,29 @@ func TestTrimmed(t *testing.T) {
 	assert.Equal(t, io.EOF, err)
 	assert.Equal(t, 0, n)
 
-	buffer := []byte{1, 1, 1}
+	buffer := []byte{1, 1, 1} // the buffer is dirty
 	n, err = a.ReadAt(buffer, 0)
 	assert.NoError(t, err)
 	assert.Equal(t, 3, n)
 	assert.Equal(t, []byte{1, 2, 3}, buffer)
 
-	buffer = []byte{1, 1, 1, 1, 1, 1, 1, 1} // the buffer is dirty
+	buffer = []byte{1, 1, 1, 1, 1, 1, 1, 1}
 	n, err = a.ReadAt(buffer, 0)
 	assert.NoError(t, err)
 	assert.Equal(t, 8, n)
 	assert.Equal(t, []byte{1, 2, 3, 0, 0, 0, 0, 0}, buffer)
 
-	buffer = []byte{1, 1, 1, 1, 1, 1, 1, 1} // the buffer is dirty
+	buffer = []byte{1, 1, 1, 1, 1, 1, 1, 1}
 	n, err = a.ReadAt(buffer, 2)
 	assert.NoError(t, err)
 	assert.Equal(t, 6, n)
-	assert.Equal(t, []byte{3, 0, 0, 0, 0, 0}, buffer[:6])
+	assert.Equal(t, []byte{3, 0, 0, 0, 0, 0, 1, 1}, buffer)
+
+	buffer = []byte{1, 1}
+	n, err = a.ReadAt(buffer, 6)
+	assert.NoError(t, err)
+	assert.Equal(t, 2, n)
+	assert.Equal(t, []byte{0, 0}, buffer)
 }
 
 func randomArray(n uint64) []byte {
@@ -50,11 +56,13 @@ func randomArray(n uint64) []byte {
 	return a
 }
 func FuzzTrimmed(f *testing.F) {
-	f.Add(uint64(2048), uint64(2048), uint64(2048))
-	f.Fuzz(func(t *testing.T, trimmed_size, buffer_size, off_size uint64) {
-		a := New(randomArray(trimmed_size))
+	f.Add(uint64(2048), uint64(2048), uint64(2048), uint64(512))
+	f.Fuzz(func(t *testing.T, trimmed_size, buffer_size, off_size uint64, zero uint64) {
+		raw := randomArray(trimmed_size)
+		a, err := NewTrimmed(raw, len(raw)+int(zero))
+		assert.NoError(t, err)
 		buffer := make([]byte, buffer_size)
-		_, err := a.ReadAt(buffer, int64(off_size))
+		_, err = a.ReadAt(buffer, int64(off_size))
 		if err != nil {
 			assert.Equal(t, io.EOF, err)
 		}
