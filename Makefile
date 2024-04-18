@@ -52,6 +52,10 @@ diff: bin
 fsck: bin
 	go build -o bin/fsck cmd/fsck/fsck.go
 
+server: bin
+	go build -o bin/server cmd/server/server.go
+
+
 debug: bin
 	go build -o bin/debug cmd/debug/debug.go
 
