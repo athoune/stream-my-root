@@ -60,8 +60,10 @@ func (l *LocalReader) Name() string {
 }
 
 func (l *LocalReader) Get(hash string) (ReadableAt, error) {
+	logger := slog.Default().With("hash", hash)
 	block, ok := l.cache.Get(hash)
 	if ok {
+		logger.Debug("LocalReader.Get", "cached", true)
 		return block, nil
 	}
 	fBlock, err := os.Open(fmt.Sprintf("%s/%s.zst", l.folder, hash))
@@ -72,15 +74,18 @@ func (l *LocalReader) Get(hash string) (ReadableAt, error) {
 	if err != nil {
 		return nil, err
 	}
+	logger = logger.With("compressed_size", len(compressedBlock))
 	rawBlock, err := l.decoder.DecodeAll(compressedBlock, nil)
 	if err != nil {
 		return nil, err
 	}
+	logger = logger.With("trimmed_size", len(rawBlock))
 	block, err = trimmed.NewTrimmed(rawBlock, l.blockSize)
 	if err != nil {
 		return nil, err
 	}
 	l.cache.Add(hash, block)
+	logger.Debug("LocalReader.Get")
 	return block, nil
 }
 
