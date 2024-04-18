@@ -90,5 +90,12 @@ img:
 		stream_my_root \
 		sh -c 'manifest2layers.sh "$(NAME)" && tar2img.sh "$(NAME)"'
 
+lima-create:
+	limactl create --cpus=2 --memory=2 --name=smr-debian template://debian
+
+lima:
+	limactl start smr-debian
+	limactl shell smr-debian
+
 clean:
 	rm -rf out

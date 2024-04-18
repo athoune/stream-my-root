@@ -76,9 +76,9 @@ Mount from a VM on a Mac
 
 It works with
 
-* [Lima](https://lima-vm.io) `brew install lima`
-* [Multipass](https://multipass.run/) `brew install multipass`
-* Vagrant
+* [Lima](https://lima-vm.io) `brew install lima`. The image is minimalist, without kernel logging making debug a bit harder.
+* [Multipass](https://multipass.run/) `brew install multipass`. A good old fat Ubuntu image.
+* Vagrant. Old, huge, but it works.
 
 Don't use `localhost` but the host IP.
 
