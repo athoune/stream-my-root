@@ -12,6 +12,10 @@ endif
 ifeq "$(ARCH_UNAME)" "aarch64"
 ARCH:=arm64
 endif
+CRANE_ARCH:=$(ARCH)
+ifeq "$(CRANE_ARCH)" "amd64"
+CRANE_ARCH=x86_64
+endif
 
 build: chunk diff server fsck
 
@@ -33,7 +37,7 @@ fuzz-blocks:
 fuzz: fuzz-trimmed fuzz-blocks
 
 docker:
-	docker build -t stream_my_root . --build-arg "ARCH=$(ARCH)" --build-arg "ARCH_UNAME=$(ARCH_UNAME)"
+	docker build -t stream_my_root . --build-arg "ARCH=$(ARCH)" --build-arg "ARCH_UNAME=$(ARCH_UNAME)" --build-arg "CRANE_ARCH=$(CRANE_ARCH)"
 
 nbd-client:
 	docker build -f Dockerfile.client -t nbd-client .
