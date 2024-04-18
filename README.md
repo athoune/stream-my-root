@@ -1,5 +1,8 @@
 # Stream my root
 
+AWS wrote a white paper about Lambda, and explain to stream container images, for a better startup time.
+Lets play with this tool, containers (even tiny VM) are always fun to manipulate.
+
 [On-demand Container Loading in AWS Lambda](https://arxiv.org/abs/2305.13162)
 
 * [x] Build desterministic blocks from oci/docker images
@@ -42,7 +45,7 @@ Build tools (with golang)
 make
 ```
 
-Chunk images
+Cut images in small chunks
 
 ```bash
 ./bin/chunk out/*.img
