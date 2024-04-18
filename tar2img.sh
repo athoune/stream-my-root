@@ -11,7 +11,7 @@ cwd=$(pwd)
 # https://www.unixtimestamp.com
 T=1712517222
 
-make_ext4fs -l 1G -b 64k -L stream -T $T -g 256 "$image"
+make_ext4fs -l 1G -L stream -T $T "$image"
 
 mkdir -p /tmp/disk
 fuse2fs  "$image" /tmp/disk -o rw
