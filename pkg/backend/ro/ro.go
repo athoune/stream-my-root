@@ -40,7 +40,7 @@ func (r *ROBackend) ReadAt(p []byte, off int64) (n int, err error) {
 		logger.Error("Can't read", "n", n, "error", err)
 		return n, err
 	}
-	logger.Debug("ReadAt", "n", n)
+	logger.Info("ReadAt", "n", n)
 	return
 }
 
