@@ -2,15 +2,15 @@ NAME:=gcr.io/distroless/static-debian12
 FLAT_NAME=$(shell echo $(NAME) | sed 's/[\/:]/_/g')
 FUZZ_TIME:=10
 ifeq "$(shell uname)" "Darwin"
-ARCH:=$(shell uname -a | cut -f 15 -d ' ')
+ARCH_UNAME:=$(shell uname -a | cut -f 15 -d ' ')
 else
-ARCH:=$(shell uname -a | cut -f 12 -d ' ')
+ARCH_UNAME:=$(shell uname -a | cut -f 12 -d ' ')
 endif
-ifeq "$(ARCH)" "x86_64"
-ARCH2:=amd64
+ifeq "$(ARCH_UNAME)" "x86_64"
+ARCH:=amd64
 endif
-ifeq "$(ARCH)" "aarch64"
-ARCH2:=arm64
+ifeq "$(ARCH_UNAME)" "aarch64"
+ARCH:=arm64
 endif
 
 build: chunk diff server fsck
@@ -33,7 +33,7 @@ fuzz-blocks:
 fuzz: fuzz-trimmed fuzz-blocks
 
 docker:
-	docker build -t stream_my_root . --build-arg ARCH --build-arg ARCH2
+	docker build -t stream_my_root . --build-arg "ARCH=$(ARCH)" --build-arg "ARCH_UNAME=$(ARCH_UNAME)"
 
 nbd-client:
 	docker build -f Dockerfile.client -t nbd-client .
