@@ -12,7 +12,7 @@
 * [ ] Build the list of needed chunks to start an image
 * [ ] Garbage collect unused chunks
 
-## Test it
+## Use it
 
 Build the make_ext4fs image
 
@@ -81,6 +81,28 @@ It works with
 * Vagrant
 
 Don't use `localhost` but the host IP.
+
+## Test it
+
+Some fixtures
+
+```bash
+make img NAME=gcr.io/distroless/base-debian12
+./bin/chunk out/gcr.io_distroless_base-debian12.img
+```
+
+Test (and even fuzzing)
+
+```bash
+make test
+make fuzz
+```
+
+Compare chunked and plain images
+
+```bash
+./bin/debug out/gcr.io_distroless_base-debian12.img
+```
 
 ## Stuff to read
 
