@@ -36,11 +36,18 @@ fuzz-blocks:
 
 fuzz: fuzz-trimmed fuzz-blocks
 
-docker:
-	docker build -t stream_my_root . --build-arg "ARCH=$(ARCH)" --build-arg "ARCH_UNAME=$(ARCH_UNAME)" --build-arg "CRANE_ARCH=$(CRANE_ARCH)"
+make_ext4fs: contrib/resurrected-make-ext4fs/Makefile
+	cd contrib/resurrected-make-ext4fs && make
 
-nbd-client:
-	docker build -f Dockerfile.client -t nbd-client .
+contrib/resurrected-make-ext4fs/Makefile:
+	make submodule
+
+submodule:
+	git submodule init
+	git submodule update
+
+docker-tool: make_ext4fs
+	docker build -t stream_my_root . --build-arg "ARCH=$(ARCH)" --build-arg "ARCH_UNAME=$(ARCH_UNAME)" --build-arg "CRANE_ARCH=$(CRANE_ARCH)"
 
 client:
 	docker run \
@@ -54,6 +61,9 @@ client:
 
 docker-server:
 	docker image build -f Dockerfile.server -t smr-server .
+
+docker-client:
+	docker build -f Dockerfile.client -t nbd-client .
 
 bin:
 	mkdir -p bin
@@ -69,7 +79,6 @@ fsck: bin
 
 server: bin
 	go build -o bin/server cmd/server/server.go
-
 
 debug: bin
 	go build -o bin/debug cmd/debug/debug.go
@@ -99,3 +108,5 @@ lima:
 
 clean:
 	rm -rf out
+	rm -rf smr
+	rm -rf layers
