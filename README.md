@@ -20,14 +20,13 @@ Lets play with this tool, containers (even tiny VM) are always fun to manipulate
 Build the make_ext4fs image
 
 ```bash
-cd contrib/resurrected-make-ext4fs
-make
+make make_ext4fs
 ```
 
 Build the tool image
 
 ```bash
-make docker
+make docker-tool
 ```
 
 Fetch some images
@@ -37,6 +36,17 @@ make img NAME=gcr.io/distroless/python3-debian12
 make img NAME=gcr.io/distroless/base-debian12
 # *.img files are stored in out/
 ls out
+# images ar full of holes
+ls -lsh out/*.img
+# holes are here
+filefrag -v out/gcr.io_distroless_base-debian12.img
+```
+
+Disk images are well handled by file
+
+```bash
+$ file out/gcr.io_distroless_python3-debian12.img
+out/gcr.io_distroless_python3-debian12.img: Linux rev 1.0 ext4 filesystem data, UUID=d1fa2f31-4aeb-8354-9262-b4d19504856c, volume name "stream" (extents) (large files)
 ```
 
 Build tools (with golang)
@@ -60,6 +70,21 @@ Run the server
 ```bash
 # the first arg is a recipe
 ./bin/server out/gcr.io_distroless_python3-debian12.img.recipe
+```
+
+Qemu can see it
+
+```bash
+$ qemu-img info nbd://localhost:10809/smr
+image: nbd://localhost:10809/smr
+file format: raw
+virtual size: 1 GiB (1073741824 bytes)
+disk size: unavailable
+Child node '/file':
+    filename: nbd://localhost:10809/smr
+    protocol type: nbd
+    file length: 1 GiB (1073741824 bytes)
+    disk size: unavailable
 ```
 
 Mount the image (from a Linux)
