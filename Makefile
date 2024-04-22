@@ -47,7 +47,12 @@ submodule:
 	git submodule update
 
 docker-tool: make_ext4fs
-	docker build -t stream_my_root . --build-arg "ARCH=$(ARCH)" --build-arg "ARCH_UNAME=$(ARCH_UNAME)" --build-arg "CRANE_ARCH=$(CRANE_ARCH)"
+	docker build \
+		-t stream_my_root \
+		--build-arg "ARCH=$(ARCH)" \
+		--build-arg "ARCH_UNAME=$(ARCH_UNAME)" \
+		--build-arg "CRANE_ARCH=$(CRANE_ARCH)" \
+		.
 
 client:
 	docker run \
