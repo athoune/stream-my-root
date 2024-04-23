@@ -21,7 +21,7 @@ type LocalReader struct {
 	tainter   *blocks.Tainter
 }
 
-func NewLocalReader(folder string, tainted bool) (*blocks.Reader, error) {
+func New(folder string, tainted bool) (*LocalReader, error) {
 	_, err := os.Stat(folder)
 	if err != nil {
 		return nil, err
@@ -35,13 +35,21 @@ func NewLocalReader(folder string, tainted bool) (*blocks.Reader, error) {
 	if tainted {
 		tainter = blocks.NewTainter()
 	}
-	return &blocks.Reader{&LocalReader{
+	return &LocalReader{
 		folder:    folder,
 		blockSize: blocks.DEFAULT_BLOCK_SIZE,
 		cache:     cache,
 		decoder:   decoder,
 		tainter:   tainter,
-	}}, nil
+	}, nil
+}
+
+func NewLocalReader(folder string, tainted bool) (*blocks.Reader, error) {
+	l, err := New(folder, tainted)
+	if err != nil {
+		return nil, err
+	}
+	return &blocks.Reader{l}, nil
 }
 
 func (l *LocalReader) BlockSize() int {
@@ -50,6 +58,27 @@ func (l *LocalReader) BlockSize() int {
 
 func (l *LocalReader) Name() string {
 	return "LocalReader"
+}
+
+func (l *LocalReader) Contains(hash string) bool {
+	ok := l.cache.Contains(hash)
+	if ok {
+		return true
+	}
+	_, err := os.Stat(fmt.Sprintf("%s/%s.zst", l.folder, hash))
+	if err == nil {
+		return true
+	} else {
+		if os.IsNotExist(err) {
+			return false
+		}
+		slog.Error("Contains", err)
+		panic(err)
+	}
+}
+
+func (l *LocalReader) Folder() string {
+	return l.folder
 }
 
 func (l *LocalReader) Get(hash string) (blocks.ReadableAt, error) {
