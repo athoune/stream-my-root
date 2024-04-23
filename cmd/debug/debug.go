@@ -10,6 +10,7 @@ import (
 
 	"github.com/athoune/stream-my-root/pkg/backend/ro"
 	"github.com/athoune/stream-my-root/pkg/blocks"
+	"github.com/athoune/stream-my-root/pkg/reader/local"
 	"github.com/lmittmann/tint"
 )
 
@@ -39,7 +40,7 @@ func main() {
 		panic(err)
 	}
 	slog.Info("Image", "image", recipe_path, "blocks", recipe.NumberOfBlocks())
-	reader, err := blocks.NewLocalReader("smr", false)
+	reader, err := local.NewLocalReader("smr", false)
 	if err != nil {
 		panic(err)
 	}

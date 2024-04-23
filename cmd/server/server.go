@@ -8,6 +8,7 @@ import (
 
 	"github.com/athoune/stream-my-root/pkg/backend/ro"
 	"github.com/athoune/stream-my-root/pkg/blocks"
+	"github.com/athoune/stream-my-root/pkg/reader/local"
 	"github.com/lmittmann/tint"
 	"github.com/pojntfx/go-nbd/pkg/server"
 )
@@ -35,7 +36,7 @@ func main() {
 	if os.Getenv("TAINTED") != "" {
 		tainted = true
 	}
-	reader, err := blocks.NewLocalReader("smr", tainted)
+	reader, err := local.NewLocalReader("smr", tainted)
 	if err != nil {
 		panic(err)
 	}

@@ -28,10 +28,10 @@ test:
 fuzz-trimmed:
 	go test -fuzz=Fuzz -fuzztime $(FUZZ_TIME)s ./pkg/trimmed
 
-fuzz-blocks:
-	go test -fuzz=Fuzz -fuzztime $(FUZZ_TIME)s ./pkg/blocks
+fuzz-reader-local:
+	go test -fuzz=Fuzz -fuzztime $(FUZZ_TIME)s ./pkg/reader/local
 
-fuzz: fuzz-trimmed fuzz-blocks
+fuzz: fuzz-trimmed fuzz-reader-local
 
 make_ext4fs: contrib/resurrected-make-ext4fs/Makefile
 	cd contrib/resurrected-make-ext4fs && make
