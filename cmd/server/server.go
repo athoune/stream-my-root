@@ -31,7 +31,11 @@ func main() {
 		panic(err)
 	}
 	slog.Info("Image", "image", os.Args[1], "blocks", recipe.NumberOfBlocks())
-	reader, err := blocks.NewLocalReader("smr")
+	var tainted bool
+	if os.Getenv("TAINTED") != "" {
+		tainted = true
+	}
+	reader, err := blocks.NewLocalReader("smr", tainted)
 	if err != nil {
 		panic(err)
 	}

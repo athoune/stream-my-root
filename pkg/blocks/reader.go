@@ -31,9 +31,10 @@ type LocalReader struct {
 	blockSize int
 	cache     *lru.Cache[string, *trimmed.Trimmed]
 	decoder   *zstd.Decoder
+	tainter   *Tainter
 }
 
-func NewLocalReader(folder string) (*Reader, error) {
+func NewLocalReader(folder string, tainted bool) (*Reader, error) {
 	_, err := os.Stat(folder)
 	if err != nil {
 		return nil, err
@@ -43,11 +44,16 @@ func NewLocalReader(folder string) (*Reader, error) {
 		return nil, err
 	}
 	var decoder, _ = zstd.NewReader(nil, zstd.WithDecoderConcurrency(0))
+	var tainter *Tainter
+	if tainted {
+		tainter = NewTainter()
+	}
 	return &Reader{&LocalReader{
 		folder:    folder,
 		blockSize: DEFAULT_BLOCK_SIZE,
 		cache:     cache,
 		decoder:   decoder,
+		tainter:   tainter,
 	}}, nil
 }
 
@@ -64,6 +70,9 @@ func (l *LocalReader) Get(hash string) (ReadableAt, error) {
 	block, ok := l.cache.Get(hash)
 	if ok {
 		logger.Debug("LocalReader.Get", "cached", true)
+		if l.tainter != nil {
+			l.tainter.Taint(hash)
+		}
 		return block, nil
 	}
 	fBlock, err := os.Open(fmt.Sprintf("%s/%s.zst", l.folder, hash))
@@ -83,6 +92,9 @@ func (l *LocalReader) Get(hash string) (ReadableAt, error) {
 	block, err = trimmed.NewTrimmed(rawBlock, l.blockSize)
 	if err != nil {
 		return nil, err
+	}
+	if l.tainter != nil {
+		l.tainter.Taint(hash)
 	}
 	l.cache.Add(hash, block)
 	logger.Debug("LocalReader.Get")
