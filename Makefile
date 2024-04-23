@@ -23,10 +23,7 @@ test:
 	 go test \
 		-timeout 30s \
 		-cover \
-		github.com/athoune/stream-my-root/pkg/blocks \
-		github.com/athoune/stream-my-root/pkg/chunk \
-		github.com/athoune/stream-my-root/pkg/trimmed \
-		github.com/athoune/stream-my-root/pkg/zero
+		./pkg/...
 
 fuzz-trimmed:
 	go test -fuzz=Fuzz -fuzztime $(FUZZ_TIME)s ./pkg/trimmed
