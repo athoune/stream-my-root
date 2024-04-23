@@ -63,11 +63,11 @@ func TestReader(t *testing.T) {
 }
 
 func FuzzReader(f *testing.F) {
-	recipe_f, err := os.Open("../../out/gcr.io_distroless_base-debian12.img.recipe")
+	recipe_f, err := os.Open("../../fixtures/gcr.io_distroless_static-debian12.img.recipe")
 	assert.NoError(f, err)
 	recipe, err := ReadRecipe(recipe_f)
 	assert.NoError(f, err)
-	r, err := NewLocalReader("../../smr")
+	r, err := NewLocalReader("../../fixtures/chunks")
 	assert.NoError(f, err)
 	f.Add(uint64(2048), uint64(2048))
 	f.Fuzz(func(t *testing.T, buffer_size, off uint64) {
