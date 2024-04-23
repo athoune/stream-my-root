@@ -19,6 +19,7 @@ func TestHttp(t *testing.T) {
 	tmp, err := os.MkdirTemp("/tmp", "reader-http")
 	assert.NoError(t, err)
 	slog.Info("path", "tmp", tmp)
+	defer os.RemoveAll(tmp)
 
 	local, err := local.New(tmp, false)
 	assert.NoError(t, err)
@@ -33,4 +34,5 @@ func TestHttp(t *testing.T) {
 	n, err := r.ReadAt(buffer, 0)
 	assert.NoError(t, err)
 	assert.Equal(t, 10, n)
+	assert.True(t, local.Contains("03e62706ea71be374789eb985ea8260825ba707c79cfc3b0434d8632cb53eabc"))
 }
