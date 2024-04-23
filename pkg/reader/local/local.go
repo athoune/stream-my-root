@@ -52,6 +52,26 @@ func (l *LocalReader) Name() string {
 	return "LocalReader"
 }
 
+func (l *LocalReader) Contains(hash string) bool {
+	ok := l.cache.Contains(hash)
+	if ok {
+		return true
+	}
+	_, err := os.Stat(fmt.Sprintf("%s/%s.zst", l.folder, hash))
+	if err == nil {
+		return true
+	} else {
+		if err == os.ErrNotExist {
+			return false
+		}
+		panic(err)
+	}
+}
+
+func (l *LocalReader) Folder() string {
+	return l.folder
+}
+
 func (l *LocalReader) Get(hash string) (blocks.ReadableAt, error) {
 	logger := slog.Default().With("hash", hash)
 	block, ok := l.cache.Get(hash)
