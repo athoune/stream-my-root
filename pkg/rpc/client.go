@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"net"
+
+	"github.com/hashicorp/yamux"
 )
 
 type Response struct {
@@ -84,4 +86,26 @@ func (c *ClientSide) Query(method Method, arg []byte) (*Response, error) {
 		return nil, err
 	}
 	return c.answer()
+}
+
+type Client struct {
+	session *yamux.Session
+}
+
+func NewClient(conn net.Conn) (*Client, error) {
+	seesion, err := yamux.Client(conn, nil)
+	if err != nil {
+		return nil, err
+	}
+	return &Client{
+		session: seesion,
+	}, nil
+}
+
+func (c *Client) Query(method Method, arg []byte) (*Response, error) {
+	conn, err := c.session.Open()
+	if err != nil {
+		return nil, err
+	}
+	return NewClientSide(conn).Query(method, arg)
 }

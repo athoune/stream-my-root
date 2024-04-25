@@ -10,25 +10,33 @@ import (
 )
 
 type Server struct {
-	socket string
-	logger *slog.Logger
-	router *Router
+	socket   string
+	logger   *slog.Logger
+	router   *Router
+	listener net.Listener
 }
 
 func New(socket string) *Server {
 	return &Server{
 		socket: socket,
 		logger: slog.Default().With("socket", socket),
+		router: NewRouter(),
 	}
 }
 
-func (s *Server) ListenAndServe() error {
-	ln, err := net.Listen("unix", s.socket)
-	if err != nil {
-		return err
-	}
+func (s *Server) Register(method Method, handler Handler) {
+	s.router.Register(method, handler)
+}
+
+func (s *Server) Listen() error {
+	var err error
+	s.listener, err = net.Listen("unix", s.socket)
+	return err
+}
+
+func (s *Server) Serve() {
 	for {
-		conn, err := ln.Accept()
+		conn, err := s.listener.Accept()
 		if err != nil {
 			s.logger.Error("Server", "err", err)
 		}

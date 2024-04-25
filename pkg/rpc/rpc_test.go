@@ -71,3 +71,30 @@ func TestRouter(t *testing.T) {
 	assert.Nil(t, resp.Error)
 	assert.Equal(t, "Hello World", string(resp.Value))
 }
+
+func TestServer(t *testing.T) {
+	temp, err := os.MkdirTemp("/tmp", "test_sock")
+	assert.NoError(t, err)
+	defer os.RemoveAll(temp)
+
+	s := fmt.Sprintf("%s/test.sock", temp)
+
+	server := New(s)
+	server.Register(1, func(arg []byte) ([]byte, error) {
+		return []byte(fmt.Sprintf("Hello %s", string(arg))), nil
+	})
+	err = server.Listen()
+	assert.NoError(t, err)
+	go server.Serve()
+
+	conn, err := net.Dial("unix", s)
+	assert.NoError(t, err)
+
+	client, err := NewClient(conn)
+	assert.NoError(t, err)
+
+	resp, err := client.Query(1, []byte("World"))
+	assert.NoError(t, err)
+	assert.Nil(t, resp.Error)
+	assert.Equal(t, "Hello World", string(resp.Value))
+}
