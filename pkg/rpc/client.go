@@ -102,10 +102,36 @@ func NewClient(conn net.Conn) (*Client, error) {
 	}, nil
 }
 
-func (c *Client) Query(method Method, arg []byte) (*Response, error) {
+func (c *Client) Close() error {
+	return c.session.Close()
+}
+
+func (c *Client) Session() (*Session, error) {
 	conn, err := c.session.Open()
 	if err != nil {
 		return nil, err
 	}
-	return NewClientSide(conn).Query(method, arg)
+	return &Session{
+		conn: conn,
+	}, nil
+}
+
+type Session struct {
+	conn net.Conn
+}
+
+func (s *Session) Close() error {
+	return s.conn.Close()
+}
+
+func (s *Session) Query(method Method, arg []byte) (*Response, error) {
+	return NewClientSide(s.conn).Query(method, arg)
+}
+
+func (c *Client) Query(method Method, arg []byte) (*Response, error) {
+	session, err := c.Session()
+	if err != nil {
+		return nil, err
+	}
+	return session.Query(method, arg)
 }
