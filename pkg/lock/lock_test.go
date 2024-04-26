@@ -1,4 +1,4 @@
-package cached
+package lock
 
 import (
 	"sync"
@@ -8,7 +8,7 @@ import (
 )
 
 func TestLock(t *testing.T) {
-	l := NewLocker()
+	l := NewLock()
 	ok := l.Wait()
 	assert.True(t, ok)
 	waiting := &sync.WaitGroup{}
