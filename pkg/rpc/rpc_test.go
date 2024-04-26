@@ -1,6 +1,7 @@
 package rpc
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -47,6 +48,9 @@ func TestRouter(t *testing.T) {
 	router.Register(1, func(arg []byte) ([]byte, error) {
 		return []byte(fmt.Sprintf("Hello %s", string(arg))), nil
 	})
+	router.Register(2, func(arg []byte) ([]byte, error) {
+		return nil, errors.New("oups")
+	})
 	temp, err := os.MkdirTemp("/tmp", "test_sock")
 	assert.NoError(t, err)
 	defer os.RemoveAll(temp)
@@ -70,6 +74,11 @@ func TestRouter(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Nil(t, resp.Error)
 	assert.Equal(t, "Hello World", string(resp.Value))
+
+	resp, err = client.Query(2, nil)
+	assert.NoError(t, err)
+	assert.NotNil(t, resp.Error)
+	assert.Equal(t, "oups", resp.Error.Error())
 }
 
 func TestServer(t *testing.T) {

@@ -82,6 +82,9 @@ func (r *ServerSide) Query() (Method, []byte, error) {
 	if err != nil {
 		return 0, nil, err
 	}
+	if size == 0 {
+		return method, nil, nil
+	}
 	buff := make([]byte, size)
 	_, err = io.ReadFull(r.readWriter, buff)
 	if err != nil {
@@ -101,19 +104,26 @@ func (s *ServerSide) Answer(resp []byte, a_err error) error {
 		if err != nil {
 			return err
 		}
-		return nil
+		return s.readWriter.Flush()
 	}
 	err := binary.Write(s.readWriter, binary.BigEndian, uint32(0))
 	if err != nil {
 		return err
 	}
-	err = binary.Write(s.readWriter, binary.BigEndian, uint32(len(resp)))
-	if err != nil {
-		return err
-	}
-	_, err = s.readWriter.Write(resp)
-	if err != nil {
-		return err
+	if resp == nil {
+		err := binary.Write(s.readWriter, binary.BigEndian, uint32(0))
+		if err != nil {
+			return err
+		}
+	} else {
+		err = binary.Write(s.readWriter, binary.BigEndian, uint32(len(resp)))
+		if err != nil {
+			return err
+		}
+		_, err = s.readWriter.Write(resp)
+		if err != nil {
+			return err
+		}
 	}
 	return s.readWriter.Flush()
 }
