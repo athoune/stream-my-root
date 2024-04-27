@@ -30,3 +30,11 @@ func TestCached(t *testing.T) {
 	assert.NoError(t, err)
 	done.Wait()
 }
+
+func TestGet(t *testing.T) {
+	cache := NewCached(1024 * 1024)
+	resp, err := cache.Get([]byte("plop"))
+	assert.NoError(t, err)
+	assert.Len(t, resp, 1)
+	assert.Equal(t, byte(0), resp[0])
+}

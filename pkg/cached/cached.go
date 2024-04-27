@@ -1,7 +1,6 @@
 package cached
 
 import (
-	"encoding/binary"
 	"sync"
 	"time"
 
@@ -41,20 +40,27 @@ func (c *Cached) Lock(raw []byte) ([]byte, error) {
 		c.locks[key] = locker
 	}
 	c.mutex.Unlock()
-	locker.Wait()
-	return nil, nil
+	ok = locker.Wait()
+	resp := Bool(ok)
+	return resp.MarshalBinary()
 }
 
-func (c *Cached) Get(key []byte) ([]byte, error) {
-	return nil, nil
+func (c *Cached) Get(raw []byte) ([]byte, error) {
+	key := string(raw)
+	_, ok := c.lru.Get(key)
+	resp := Bool(ok)
+	return resp.MarshalBinary()
 }
 
 func (c *Cached) Set(raw []byte) ([]byte, error) {
-	size := binary.BigEndian.Uint32(raw[0:4])
-	key := string(raw[4:])
+	arg := &SetArg{}
+	err := arg.UnmarshalBinary(raw)
+	if err != nil {
+		return nil, err
+	}
 	c.mutex.RLock()
-	c.lru.Add(key, int(size))
-	locker, ok := c.locks[key]
+	c.lru.Add(arg.Key, int(arg.Size))
+	locker, ok := c.locks[arg.Key]
 	c.mutex.RUnlock()
 	if ok {
 		locker.Release()

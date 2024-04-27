@@ -67,7 +67,7 @@ func (c *ClientSide) answer() (*Response, error) {
 	}
 	if size == 0 { // empty response
 		return &Response{
-			Value: []byte{},
+			Value: nil,
 		}, nil
 	}
 	buff = make([]byte, size)

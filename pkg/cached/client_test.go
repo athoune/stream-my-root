@@ -1,7 +1,6 @@
 package cached
 
 import (
-	"bytes"
 	"fmt"
 	"net"
 	"os"
@@ -31,6 +30,11 @@ func TestClient(t *testing.T) {
 	assert.NoError(t, err)
 	client, err := NewClient(conn)
 	assert.NoError(t, err)
+
+	ok, err := client.Get("plop")
+	assert.NoError(t, err)
+	assert.False(t, ok)
+
 	waiting := &sync.WaitGroup{}
 	waiting.Add(10)
 	done := &sync.WaitGroup{}
@@ -46,12 +50,5 @@ func TestClient(t *testing.T) {
 	waiting.Wait()
 	err = client.Set("plop", 512)
 	assert.NoError(t, err)
-}
 
-func TestSetArg(t *testing.T) {
-	arg := setArg("plop", 9)
-	buff := &bytes.Buffer{}
-	buff.Write([]byte{0, 0, 0, 9})
-	buff.WriteString("plop")
-	assert.Equal(t, buff.Bytes(), arg)
 }

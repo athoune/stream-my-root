@@ -1,7 +1,6 @@
 package cached
 
 import (
-	"encoding/binary"
 	"net"
 
 	"github.com/athoune/stream-my-root/pkg/rpc"
@@ -21,15 +20,17 @@ func NewClient(conn net.Conn) (*Client, error) {
 	}, nil
 }
 
-func (c *Client) Lock(key string) error {
+func (c *Client) Lock(key string) (bool, error) {
 	r, err := c.client.Query(Lock, []byte(key))
 	if err != nil {
-		return err
+		return false, err
 	}
 	if r.Error != nil {
-		return r.Error
+		return false, r.Error
 	}
-	return nil
+	ok := Bool(false)
+	err = ok.UnmarshalBinary(r.Value)
+	return bool(ok), err
 }
 
 func (c *Client) Get(key string) (bool, error) {
@@ -40,23 +41,21 @@ func (c *Client) Get(key string) (bool, error) {
 	if r.Error != nil {
 		return false, r.Error
 	}
-	if r.Value[0] == 0 {
-		return false, nil
-	} else {
-		return true, nil
-	}
-}
-
-func setArg(key string, size uint32) []byte {
-	bkey := []byte(key)
-	arg := make([]byte, len(bkey)+4)
-	binary.BigEndian.PutUint32(arg[0:4], size)
-	copy(arg[4:], bkey)
-	return arg
+	ok := Bool(false)
+	err = ok.UnmarshalBinary(r.Value)
+	return bool(ok), err
 }
 
 func (c *Client) Set(key string, size uint32) error {
-	r, err := c.client.Query(Set, setArg(key, size))
+	arg := SetArg{
+		Key:  key,
+		Size: size,
+	}
+	raw, err := arg.MarshalBinary()
+	if err != nil {
+		return err
+	}
+	r, err := c.client.Query(Set, raw)
 	if err != nil {
 		return err
 	}
