@@ -5,9 +5,15 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/athoune/stream-my-root/pkg/rpc"
 	"github.com/stretchr/testify/assert"
 )
 
+func TestMethod(t *testing.T) {
+	assert.Equal(t, rpc.Method(1), Lock)
+	assert.Equal(t, rpc.Method(2), Get)
+	assert.Equal(t, rpc.Method(3), Set)
+}
 func TestCached(t *testing.T) {
 	cache := NewCached(1024 * 1024)
 	waiting := &sync.WaitGroup{}

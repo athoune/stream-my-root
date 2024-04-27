@@ -10,7 +10,8 @@ import (
 )
 
 const (
-	Lock rpc.Method = 1
+	_ rpc.Method = iota
+	Lock
 	Get
 	Set
 )
