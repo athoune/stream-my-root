@@ -12,21 +12,33 @@ import (
 	_local "github.com/athoune/stream-my-root/pkg/reader/local"
 )
 
+type HttpReaderOpts struct {
+	SourceUrl      string
+	CacheDirectory string
+	CacheSize      uint
+}
+
 type HttpReader struct {
-	local  _local.LocalReader
+	local  *_local.LocalReader
 	client *http.Client
 	url    string
 }
 
-func New(local *_local.LocalReader, storage string) (*HttpReader, error) {
-	_, err := url.Parse(storage)
+func New(opts *HttpReaderOpts) (*HttpReader, error) {
+	_, err := url.Parse(opts.SourceUrl)
+	if err != nil {
+		return nil, err
+	}
+	local, err := _local.New(&_local.LocalReaderOpts{
+		CacheDirectory: opts.CacheDirectory,
+	})
 	if err != nil {
 		return nil, err
 	}
 	return &HttpReader{
-		local:  *local,
+		local:  local,
 		client: &http.Client{},
-		url:    storage,
+		url:    opts.SourceUrl,
 	}, nil
 }
 

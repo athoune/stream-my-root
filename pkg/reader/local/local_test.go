@@ -13,7 +13,10 @@ func FuzzReader(f *testing.F) {
 	assert.NoError(f, err)
 	recipe, err := blocks.ReadRecipe(recipe_f)
 	assert.NoError(f, err)
-	r, err := NewLocalReader("../../../fixtures/chunks", false)
+	r, err := NewLocalReader(&LocalReaderOpts{
+		CacheDirectory: "../../../fixtures/chunks",
+		Tainted:        false,
+	})
 	assert.NoError(f, err)
 	f.Add(uint64(2048), uint64(2048))
 	f.Fuzz(func(t *testing.T, buffer_size, off uint64) {

@@ -7,7 +7,6 @@ import (
 	"os"
 	"testing"
 
-	"github.com/athoune/stream-my-root/pkg/reader/local"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -21,9 +20,10 @@ func TestHttp(t *testing.T) {
 	slog.Info("path", "tmp", tmp)
 	defer os.RemoveAll(tmp)
 
-	local, err := local.New(tmp, false)
-	assert.NoError(t, err)
-	h, err := New(local, server.URL)
+	h, err := New(&HttpReaderOpts{
+		CacheDirectory: tmp,
+		SourceUrl:      server.URL,
+	})
 	assert.NoError(t, err)
 
 	_, err = h.Get("nope")
@@ -34,5 +34,5 @@ func TestHttp(t *testing.T) {
 	n, err := r.ReadAt(buffer, 0)
 	assert.NoError(t, err)
 	assert.Equal(t, 10, n)
-	assert.True(t, local.Contains("03e62706ea71be374789eb985ea8260825ba707c79cfc3b0434d8632cb53eabc"))
+	assert.True(t, h.local.Contains("03e62706ea71be374789eb985ea8260825ba707c79cfc3b0434d8632cb53eabc"))
 }

@@ -36,7 +36,10 @@ func main() {
 	if os.Getenv("TAINTED") != "" {
 		tainted = true
 	}
-	reader, err := local.NewLocalReader("smr", tainted)
+	reader, err := local.NewLocalReader(&local.LocalReaderOpts{
+		CacheDirectory: "smr",
+		Tainted:        tainted,
+	})
 	if err != nil {
 		panic(err)
 	}

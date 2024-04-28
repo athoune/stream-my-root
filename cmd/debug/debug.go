@@ -40,7 +40,10 @@ func main() {
 		panic(err)
 	}
 	slog.Info("Image", "image", recipe_path, "blocks", recipe.NumberOfBlocks())
-	reader, err := local.NewLocalReader("smr", false)
+	reader, err := local.NewLocalReader(&local.LocalReaderOpts{
+		CacheDirectory: "smr",
+		Tainted:        false,
+	})
 	if err != nil {
 		panic(err)
 	}
