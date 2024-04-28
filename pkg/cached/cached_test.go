@@ -15,7 +15,7 @@ func TestMethod(t *testing.T) {
 	assert.Equal(t, rpc.Method(3), Set)
 }
 func TestCached(t *testing.T) {
-	cache := NewCached(1024 * 1024)
+	cache := NewCached(nil)
 	waiting := &sync.WaitGroup{}
 	waiting.Add(10)
 	done := &sync.WaitGroup{}
@@ -38,7 +38,7 @@ func TestCached(t *testing.T) {
 }
 
 func TestGet(t *testing.T) {
-	cache := NewCached(1024 * 1024)
+	cache := NewCached(nil)
 	resp, err := cache.Get([]byte("plop"))
 	assert.NoError(t, err)
 	assert.Len(t, resp, 1)

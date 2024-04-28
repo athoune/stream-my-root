@@ -31,6 +31,7 @@ func (s *Server) Register(method Method, handler Handler) {
 func (s *Server) Listen() error {
 	var err error
 	s.listener, err = net.Listen("unix", s.socket)
+	slog.Default().Info("Listen", "socket", s.socket)
 	return err
 }
 

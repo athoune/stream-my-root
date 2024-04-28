@@ -22,9 +22,26 @@ type Cached struct {
 	mutex *sync.RWMutex
 }
 
-func NewCached(max uint) *Cached {
+type CachedOpts struct {
+	K              uint
+	CorrelatedTime time.Duration
+	Max            uint
+}
+
+func DefaultCachedOpts() *CachedOpts {
+	return &CachedOpts{
+		K:              2,
+		CorrelatedTime: time.Second,
+		Max:            1024,
+	}
+}
+
+func NewCached(opts *CachedOpts) *Cached {
+	if opts == nil {
+		opts = DefaultCachedOpts()
+	}
 	return &Cached{
-		lru: lruk.New[string, int](2, time.Second, max, func(i int) int {
+		lru: lruk.New[string, int](opts.K, opts.CorrelatedTime, opts.Max, func(i int) int {
 			return i
 		}, nil),
 		locks: make(map[string]*lock.Lock),
