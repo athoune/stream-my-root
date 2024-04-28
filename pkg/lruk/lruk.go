@@ -66,7 +66,10 @@ func (l *LRUK[K, V]) eviction(size int) error {
 				key = k
 			}
 		}
-		l.delete(key)
+		err := l.delete(key)
+		if err != nil {
+			return err
+		}
 		if l.size+size < l.max { // enough place is freed
 			return nil
 		}
