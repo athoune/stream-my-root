@@ -31,27 +31,29 @@ func New[K comparable, V any](k uint, correlated_time time.Duration, max uint, s
 	}
 }
 
-func (l *LRUK[K, V]) Add(key K, value V) error {
+func (l *LRUK[K, V]) Add(key K, value V) (bool, error) {
 	return l.AddAt(key, value, time.Now())
 }
 
-func (l *LRUK[K, V]) AddAt(key K, value V, ts time.Time) error {
+func (l *LRUK[K, V]) AddAt(key K, value V, ts time.Time) (bool, error) {
 	l.lock.Lock()
 	defer l.lock.Unlock()
 	size := l.sizeFunc(value)
 	if size > l.max {
-		return fmt.Errorf("value is too large %d > %d", size, l.max)
+		return false, fmt.Errorf("value is too large %d > %d", size, l.max)
 	}
+	eviction := false
 	if size+l.size > l.max { // eviction time
+		eviction = true
 		err := l.eviction(l.sizeFunc(value))
 		if err != nil {
-			return err
+			return false, err
 		}
 	}
 	l.cache[key] = value
 	l.history[key] = NewRing[time.Time](l.k, ts)
 	l.size += size
-	return nil
+	return eviction, nil
 }
 
 func (l *LRUK[K, V]) eviction(size int) error {

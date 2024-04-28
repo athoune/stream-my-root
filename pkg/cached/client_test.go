@@ -20,7 +20,8 @@ func TestClient(t *testing.T) {
 
 	server := rpc.New(s)
 
-	cache := NewCached(nil)
+	cache, err := NewCached(nil)
+	assert.NoError(t, err)
 	cache.RegisterAll(server)
 	err = server.Listen()
 	assert.NoError(t, err)

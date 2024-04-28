@@ -1,6 +1,10 @@
 package cached
 
 import (
+	"fmt"
+	"log/slog"
+	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -17,15 +21,17 @@ const (
 )
 
 type Cached struct {
-	lru   *lruk.LRUK[string, int]
-	locks map[string]*lock.Lock
-	mutex *sync.RWMutex
+	lru       *lruk.LRUK[string, int]
+	locks     map[string]*lock.Lock
+	mutex     *sync.RWMutex
+	directory string
 }
 
 type CachedOpts struct {
 	K              uint
 	CorrelatedTime time.Duration
 	Max            uint
+	Directory      string
 }
 
 func DefaultCachedOpts() *CachedOpts {
@@ -36,17 +42,49 @@ func DefaultCachedOpts() *CachedOpts {
 	}
 }
 
-func NewCached(opts *CachedOpts) *Cached {
+func NewCached(opts *CachedOpts) (*Cached, error) {
 	if opts == nil {
 		opts = DefaultCachedOpts()
 	}
-	return &Cached{
-		lru: lruk.New[string, int](opts.K, opts.CorrelatedTime, opts.Max, func(i int) int {
-			return i
-		}, nil),
-		locks: make(map[string]*lock.Lock),
-		mutex: &sync.RWMutex{},
+	if opts.Directory == "" {
+		slog.Info("No cache directory set")
+	} else {
+		info, err := os.Stat(opts.Directory)
+		if err != nil {
+			return nil, err
+		}
+		if !info.IsDir() {
+			return nil, fmt.Errorf("not a directory : %s", opts.Directory)
+		}
 	}
+	cached := &Cached{
+		locks:     make(map[string]*lock.Lock),
+		mutex:     &sync.RWMutex{},
+		directory: opts.Directory,
+	}
+	cached.lru = lruk.New[string, int](opts.K, opts.CorrelatedTime, opts.Max, func(i int) int {
+		return i
+	}, cached.deleteHandler)
+	return cached, nil
+}
+
+func (c *Cached) deleteHandler(key string) error {
+	if c.directory == "" { // FIXME is it a good idea to accept unset directory ?
+		return nil
+	}
+	logger := slog.Default().With("directory", c.directory, "key", key)
+	if strings.ContainsRune(key, '.') {
+		err := fmt.Errorf("dangerous key : %s", key)
+		logger.Error(err.Error())
+		return err
+	}
+	file := fmt.Sprintf("%s/%s", c.directory, key)
+	err := os.Remove(file)
+	if err != nil {
+		logger.Error(err.Error())
+		return err
+	}
+	return nil
 }
 
 func (c *Cached) Lock(raw []byte) ([]byte, error) {
@@ -70,20 +108,36 @@ func (c *Cached) Get(raw []byte) ([]byte, error) {
 	return resp.MarshalBinary()
 }
 
+func (c *Cached) set(arg *SetArg) (bool, error) {
+	c.mutex.RLock()
+	eviction, err := c.lru.Add(arg.Key, int(arg.Size))
+	if err != nil {
+		c.mutex.RUnlock()
+		return eviction, err
+	}
+	locker, ok := c.locks[arg.Key]
+	c.mutex.RUnlock()
+	if ok {
+		locker.Release()
+	}
+	return eviction, nil
+}
+
 func (c *Cached) Set(raw []byte) ([]byte, error) {
 	arg := &SetArg{}
 	err := arg.UnmarshalBinary(raw)
 	if err != nil {
 		return nil, err
 	}
-	c.mutex.RLock()
-	c.lru.Add(arg.Key, int(arg.Size))
-	locker, ok := c.locks[arg.Key]
-	c.mutex.RUnlock()
-	if ok {
-		locker.Release()
+	eviction, err := c.set(arg)
+	if err != nil {
+		return nil, err
 	}
-	return nil, nil
+	resp, err := Bool(eviction).MarshalBinary()
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
 }
 
 func (c *Cached) RegisterAll(server *rpc.Server) {

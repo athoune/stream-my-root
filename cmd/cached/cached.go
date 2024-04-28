@@ -30,7 +30,10 @@ func main() {
 		opts.CorrelatedTime = correlated_time
 	}
 	slog.Default().Info("Cached", "opts", opts)
-	c := cached.NewCached(opts)
+	c, err := cached.NewCached(opts)
+	if err != nil {
+		panic(err)
+	}
 	socket := cmp.Or[string](os.Getenv("SOCKET"), "/tmp/smr.sock")
 	server := rpc.New(socket)
 	c.RegisterAll(server)
