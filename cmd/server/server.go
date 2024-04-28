@@ -2,15 +2,13 @@ package main
 
 import (
 	"log/slog"
-	"net"
 	"os"
 	"time"
 
-	"github.com/athoune/stream-my-root/pkg/backend/ro"
 	"github.com/athoune/stream-my-root/pkg/blocks"
+	"github.com/athoune/stream-my-root/pkg/nbd"
 	"github.com/athoune/stream-my-root/pkg/reader/local"
 	"github.com/lmittmann/tint"
-	"github.com/pojntfx/go-nbd/pkg/server"
 )
 
 func main() {
@@ -43,41 +41,9 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	backend := ro.NewROBackend(recipe, reader)
-	l, err := net.Listen("tcp", ":10809")
+
+	err = nbd.Serve(recipe, reader, "tcp://0.0.0.0:10809")
 	if err != nil {
 		panic(err)
-	}
-	defer l.Close()
-	slog.Info("Listen 0.0.0.0:10809")
-
-	for {
-		conn, err := l.Accept()
-		if err != nil {
-			continue
-		}
-		slog.Info("Connection", "client", conn.RemoteAddr())
-
-		go func(c net.Addr) {
-			if err := server.Handle(
-				conn,
-				[]*server.Export{
-					{
-						Name:        "smr",
-						Description: "YOLO",
-						Backend:     backend,
-					},
-				},
-				&server.Options{
-					ReadOnly:           true,
-					MinimumBlockSize:   1,
-					PreferredBlockSize: 4096,
-					MaximumBlockSize:   4096,
-					SupportsMultiConn:  true,
-				}); err != nil {
-				slog.Error("Handle", "client", c, "Error", err)
-				return
-			}
-		}(conn.RemoteAddr())
 	}
 }
