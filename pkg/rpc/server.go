@@ -46,18 +46,21 @@ func (s *Server) Serve() {
 }
 
 func (s *Server) handle(conn net.Conn) {
+	logger := s.logger.With("remote", conn.RemoteAddr())
 	session, err := yamux.Server(conn, nil)
 	if err != nil {
-		s.logger.Error("handle", "err", err)
+		logger.Error("handle", "err", err)
 		conn.Close()
 		return
 	}
+	logger.Info("The server has a new connection")
 	for {
-		stream, err := session.Accept()
+		stream, err := session.AcceptStream()
 		if err != nil {
-			s.logger.Error("handle", "err", err)
+			logger.Error("handle", "err", err)
 			continue
 		}
+		logger.With("stream id", stream.StreamID()).Debug("New stream")
 		go s.router.Loop(NewServerSide(stream))
 	}
 }
