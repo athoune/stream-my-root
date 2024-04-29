@@ -1,11 +1,16 @@
 package rpc
 
 import (
+	"cmp"
+	"context"
 	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net"
+	_url "net/url"
+	"time"
 
 	"github.com/hashicorp/yamux"
 )
@@ -89,17 +94,47 @@ func (c *ClientSide) Query(method Method, arg []byte) (*Response, error) {
 }
 
 type Client struct {
+	network string
+	address string
 	session *yamux.Session
 }
 
-func NewClient(conn net.Conn) (*Client, error) {
-	seesion, err := yamux.Client(conn, nil)
+func NewClient(address string) (*Client, error) {
+	url, err := _url.Parse(address)
 	if err != nil {
 		return nil, err
 	}
+
 	return &Client{
-		session: seesion,
+		network: url.Scheme,
+		address: cmp.Or[string](url.Host, url.Path),
 	}, nil
+}
+
+func (c *Client) getSession() (*yamux.Session, error) {
+	if c.session == nil {
+		var err error
+		var conn net.Conn
+		chrono := time.Now()
+		logger := slog.Default().With("scheme", c.network, "host", c.address)
+		// The client retry to connect for 3 seconds
+		for range 10 {
+			conn, err = net.Dial(c.network, c.address)
+			if err != nil {
+				time.Sleep(300 * time.Millisecond)
+			} else {
+				break
+			}
+		}
+		if err != nil {
+			logger.Error(err.Error())
+			return nil, err
+		}
+		logger.Debug("Open connection", "duration", time.Since(chrono))
+		return yamux.Client(conn, nil)
+	}
+
+	return c.session, nil
 }
 
 func (c *Client) Close() error {
@@ -107,7 +142,11 @@ func (c *Client) Close() error {
 }
 
 func (c *Client) Session() (*Session, error) {
-	conn, err := c.session.Open()
+	y_session, err := c.getSession()
+	if err != nil {
+		return nil, err
+	}
+	conn, err := y_session.Open()
 	if err != nil {
 		return nil, err
 	}

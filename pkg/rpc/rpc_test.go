@@ -96,10 +96,7 @@ func TestServer(t *testing.T) {
 	assert.NoError(t, err)
 	go server.Serve()
 
-	conn, err := net.Dial("unix", s)
-	assert.NoError(t, err)
-
-	client, err := NewClient(conn)
+	client, err := NewClient(fmt.Sprintf("unix://%s", s))
 	assert.NoError(t, err)
 
 	resp, err := client.Query(1, []byte("World"))
