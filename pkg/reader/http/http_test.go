@@ -1,18 +1,20 @@
 package http
 
 import (
+	"fmt"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
 
-	"github.com/athoune/stream-my-root/pkg/reader/local"
+	"github.com/athoune/stream-my-root/pkg/cached"
+	"github.com/athoune/stream-my-root/pkg/rpc"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestHttp(t *testing.T) {
-
+	slog.SetLogLoggerLevel(slog.LevelDebug)
 	server := httptest.NewServer(http.FileServer(http.Dir("../../../fixtures/chunks")))
 	defer server.Close()
 
@@ -21,9 +23,23 @@ func TestHttp(t *testing.T) {
 	slog.Info("path", "tmp", tmp)
 	defer os.RemoveAll(tmp)
 
-	local, err := local.New(tmp, false)
+	cache, err := cached.NewCached(&cached.CachedOpts{
+		Directory: tmp,
+	})
 	assert.NoError(t, err)
-	h, err := New(local, server.URL)
+	srv := rpc.New(fmt.Sprintf("%s/cache.sock", tmp))
+	cache.RegisterAll(srv)
+	err = srv.Listen()
+	assert.NoError(t, err)
+	go func() {
+		srv.Serve()
+	}()
+
+	h, err := New(&HttpReaderOpts{
+		CacheDirectory: tmp,
+		SourceUrl:      server.URL,
+		CachedUrl:      fmt.Sprintf("unix:///%s/cache.sock", tmp),
+	})
 	assert.NoError(t, err)
 
 	_, err = h.Get("nope")
@@ -34,5 +50,5 @@ func TestHttp(t *testing.T) {
 	n, err := r.ReadAt(buffer, 0)
 	assert.NoError(t, err)
 	assert.Equal(t, 10, n)
-	assert.True(t, local.Contains("03e62706ea71be374789eb985ea8260825ba707c79cfc3b0434d8632cb53eabc"))
+	assert.True(t, h.local.Contains("03e62706ea71be374789eb985ea8260825ba707c79cfc3b0434d8632cb53eabc"))
 }

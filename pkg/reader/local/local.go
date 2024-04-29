@@ -12,6 +12,22 @@ import (
 	"github.com/klauspost/compress/zstd"
 )
 
+type LocalReaderOpts struct {
+	CacheDirectory string
+	BlockSize      int
+	Tainted        bool
+	CacheSize      int
+}
+
+func (l *LocalReaderOpts) SetDefault() {
+	if l.BlockSize == 0 {
+		l.BlockSize = blocks.DEFAULT_BLOCK_SIZE
+	}
+	if l.CacheSize == 0 {
+		l.CacheSize = 128
+	}
+}
+
 // LocalReader has a folder full of zstd compressed blocks
 type LocalReader struct {
 	folder    string
@@ -21,8 +37,9 @@ type LocalReader struct {
 	tainter   *blocks.Tainter
 }
 
-func New(folder string, tainted bool) (*LocalReader, error) {
-	_, err := os.Stat(folder)
+func New(opts *LocalReaderOpts) (*LocalReader, error) {
+	opts.SetDefault()
+	_, err := os.Stat(opts.CacheDirectory)
 	if err != nil {
 		return nil, err
 	}
@@ -32,20 +49,20 @@ func New(folder string, tainted bool) (*LocalReader, error) {
 	}
 	var decoder, _ = zstd.NewReader(nil, zstd.WithDecoderConcurrency(0))
 	var tainter *blocks.Tainter
-	if tainted {
+	if opts.Tainted {
 		tainter = blocks.NewTainter()
 	}
 	return &LocalReader{
-		folder:    folder,
-		blockSize: blocks.DEFAULT_BLOCK_SIZE,
+		folder:    opts.CacheDirectory,
+		blockSize: opts.BlockSize,
 		cache:     cache,
 		decoder:   decoder,
 		tainter:   tainter,
 	}, nil
 }
 
-func NewLocalReader(folder string, tainted bool) (*blocks.Reader, error) {
-	l, err := New(folder, tainted)
+func NewLocalReader(opts *LocalReaderOpts) (*blocks.Reader, error) {
+	l, err := New(opts)
 	if err != nil {
 		return nil, err
 	}

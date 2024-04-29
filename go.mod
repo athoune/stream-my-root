@@ -5,6 +5,7 @@ go 1.22.1
 require (
 	github.com/dustin/go-humanize v1.0.1
 	github.com/hashicorp/golang-lru/v2 v2.0.7
+	github.com/hashicorp/yamux v0.1.1
 	github.com/klauspost/compress v1.17.8
 	github.com/lmittmann/tint v1.0.4
 	github.com/pojntfx/go-nbd v0.3.2
