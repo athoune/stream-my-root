@@ -132,6 +132,45 @@ Compare chunked and plain images
 ./bin/debug out/gcr.io_distroless_base-debian12.img
 ```
 
+## Centralized image chunks
+
+In real world, chunks should be stored in a replicated/cenralized place, some S3 clones, or even a Registry.
+
+In the paper, each container has its sidekick service handling its "lazy disk", but chunks are available for all sidekicks on a server.
+
+Each servers share a local cache, with coordinated downloading : a chunk should be downloaded once, even if it is required for starting multiple containers.
+
+Cached just handles old chunks evictions and locking for downloading a distant chunk.
+
+```
+        +-------------+
+        | Chunk store |
+        +------+------+
+               |
++--------------|-----------+
+| +--------+   |           |
+| | Cached |   |           |
+| +---+----+   |           |
+|     |        |           |
+| +---+--------+--+        |
+| |    Storaged   |        |
+| +---------------+        |
+|                          |
++--------------------------+
+```
+
+### Cached
+
+Cached manages the chunks lifecycle with a LRU-K, just like a plain old spinning disk.
+
+Cached exposes some rpc via a minimalistic protocol ([yamux](https://pkg.go.dev/github.com/hashicorp/yamux) over UNIX socket), without serialisation (binary in, binary out), msg size are announced, no buffer needed.
+
+Locking is simple : the first user to ask for a key get a "true" answer, and try to fetch the file to the download file, then release the lock with another rpc call.
+Other users asking for the same key get no answer in first time, just wait the release of the lock,
+then get a "false" answer.
+
+The paper says that Lambda use one more level of cache, some key/value service.
+
 ## Stuff to read
 
 * https://github.com/opencontainers/image-spec/blob/main/layer.md
