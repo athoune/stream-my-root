@@ -20,6 +20,16 @@ type HttpReaderOpts struct {
 	CacheDirectory string
 	CacheSize      uint
 	CachedUrl      string
+	BlockSize      int
+}
+
+func (h *HttpReaderOpts) SetDefault() {
+	if h.BlockSize == 0 {
+		h.BlockSize = blocks.DEFAULT_BLOCK_SIZE
+	}
+	if h.CacheSize == 0 {
+		h.CacheSize = 128
+	}
 }
 
 type HttpReader struct {
@@ -27,9 +37,11 @@ type HttpReader struct {
 	client       *http.Client
 	cachedClient *cached.Client
 	url          string
+	blockSize    int
 }
 
 func New(opts *HttpReaderOpts) (*HttpReader, error) {
+	opts.SetDefault()
 	_, err := url.Parse(opts.SourceUrl)
 	if err != nil {
 		return nil, err
@@ -49,7 +61,20 @@ func New(opts *HttpReaderOpts) (*HttpReader, error) {
 		client:       &http.Client{},
 		cachedClient: cachedClient,
 		url:          opts.SourceUrl,
+		blockSize:    opts.BlockSize,
 	}, nil
+}
+
+func NewHttpReader(opts *HttpReaderOpts) (*blocks.Reader, error) {
+	h, err := New(opts)
+	if err != nil {
+		return nil, err
+	}
+	return &blocks.Reader{h}, nil
+}
+
+func (h *HttpReader) BlockSize() int {
+	return h.blockSize
 }
 
 func (h *HttpReader) Name() string {

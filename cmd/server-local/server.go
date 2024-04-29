@@ -1,14 +1,13 @@
 package main
 
 import (
-	"cmp"
 	"log/slog"
 	"os"
 	"time"
 
 	"github.com/athoune/stream-my-root/pkg/blocks"
 	"github.com/athoune/stream-my-root/pkg/nbd"
-	"github.com/athoune/stream-my-root/pkg/reader/http"
+	"github.com/athoune/stream-my-root/pkg/reader/local"
 	"github.com/lmittmann/tint"
 )
 
@@ -31,13 +30,14 @@ func main() {
 		panic(err)
 	}
 	slog.Info("Image", "image", os.Args[1], "blocks", recipe.NumberOfBlocks())
-
-	reader, err := http.NewHttpReader(&http.HttpReaderOpts{
+	var tainted bool
+	if os.Getenv("TAINTED") != "" {
+		tainted = true
+	}
+	reader, err := local.NewLocalReader(&local.LocalReaderOpts{
 		CacheDirectory: "smr",
-		CachedUrl:      cmp.Or(os.Getenv("CAHED_URL"), "/tmp/cached.sock"),
-		SourceUrl:      cmp.Or(os.Getenv("SOURCE_URL"), "http://localhost:8080"),
+		Tainted:        tainted,
 	})
-
 	if err != nil {
 		panic(err)
 	}
