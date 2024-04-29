@@ -16,8 +16,8 @@ import (
 const (
 	_ rpc.Method = iota
 	Lock
-	Get
-	Set
+	Read
+	Write
 )
 
 type Cached struct {
@@ -101,14 +101,14 @@ func (c *Cached) Lock(raw []byte) ([]byte, error) {
 	return resp.MarshalBinary()
 }
 
-func (c *Cached) Get(raw []byte) ([]byte, error) {
+func (c *Cached) Read(raw []byte) ([]byte, error) {
 	key := string(raw)
 	_, ok := c.lru.Get(key)
 	resp := Bool(ok)
 	return resp.MarshalBinary()
 }
 
-func (c *Cached) set(arg *SetArg) (bool, error) {
+func (c *Cached) write(arg *SetArg) (bool, error) {
 	c.mutex.RLock()
 	eviction, err := c.lru.Add(arg.Key, int(arg.Size))
 	if err != nil {
@@ -123,13 +123,13 @@ func (c *Cached) set(arg *SetArg) (bool, error) {
 	return eviction, nil
 }
 
-func (c *Cached) Set(raw []byte) ([]byte, error) {
+func (c *Cached) Write(raw []byte) ([]byte, error) {
 	arg := &SetArg{}
 	err := arg.UnmarshalBinary(raw)
 	if err != nil {
 		return nil, err
 	}
-	eviction, err := c.set(arg)
+	eviction, err := c.write(arg)
 	if err != nil {
 		return nil, err
 	}
@@ -142,6 +142,6 @@ func (c *Cached) Set(raw []byte) ([]byte, error) {
 
 func (c *Cached) RegisterAll(server *rpc.Server) {
 	server.Register(Lock, c.Lock)
-	server.Register(Get, c.Get)
-	server.Register(Set, c.Set)
+	server.Register(Read, c.Read)
+	server.Register(Write, c.Write)
 }

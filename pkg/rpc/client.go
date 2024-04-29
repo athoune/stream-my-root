@@ -85,12 +85,26 @@ func (c *ClientSide) answer() (*Response, error) {
 	}, nil
 }
 
-func (c *ClientSide) Query(method Method, arg []byte) (*Response, error) {
-	err := c.query(method, arg)
-	if err != nil {
-		return nil, err
+func (c *ClientSide) Query(ctx context.Context, method Method, arg []byte) (*Response, error) {
+	done := make(chan interface{})
+	var resp *Response
+	var err error
+	go func() {
+		err = c.query(method, arg)
+		if err != nil {
+			resp = nil
+			done <- nil
+		}
+		resp, err = c.answer()
+		done <- nil
+	}()
+	select {
+	case <-done:
+		return resp, err
+	case <-ctx.Done():
+		return nil, errors.New("Timeout")
 	}
-	return c.answer()
+
 }
 
 type Client struct {
@@ -163,14 +177,14 @@ func (s *Session) Close() error {
 	return s.conn.Close()
 }
 
-func (s *Session) Query(method Method, arg []byte) (*Response, error) {
-	return NewClientSide(s.conn).Query(method, arg)
+func (s *Session) Query(ctx context.Context, method Method, arg []byte) (*Response, error) {
+	return NewClientSide(s.conn).Query(ctx, method, arg)
 }
 
-func (c *Client) Query(method Method, arg []byte) (*Response, error) {
+func (c *Client) Query(ctx context.Context, method Method, arg []byte) (*Response, error) {
 	session, err := c.Session()
 	if err != nil {
 		return nil, err
 	}
-	return session.Query(method, arg)
+	return session.Query(ctx, method, arg)
 }

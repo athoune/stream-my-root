@@ -1,8 +1,8 @@
 package cached
 
 import (
+	"context"
 	"fmt"
-	"net"
 	"os"
 	"sync"
 	"testing"
@@ -27,12 +27,10 @@ func TestClient(t *testing.T) {
 	assert.NoError(t, err)
 	go server.Serve()
 
-	conn, err := net.Dial("unix", s)
-	assert.NoError(t, err)
-	client, err := NewClient(conn)
+	client, err := NewClient(fmt.Sprintf("unix://%s", s))
 	assert.NoError(t, err)
 
-	ok, err := client.Get("plop")
+	ok, err := client.Read(context.TODO(), "plop")
 	assert.NoError(t, err)
 	assert.False(t, ok)
 
@@ -44,12 +42,12 @@ func TestClient(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		go func() {
 			waiting.Done()
-			client.Lock("plop")
+			client.Lock(context.TODO(), "plop")
 			done.Done()
 		}()
 	}
 	waiting.Wait()
-	err = client.Set("plop", 512)
+	err = client.Write(context.TODO(), "plop", 512)
 	assert.NoError(t, err)
 
 }

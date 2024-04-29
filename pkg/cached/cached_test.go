@@ -13,8 +13,8 @@ import (
 
 func TestMethod(t *testing.T) {
 	assert.Equal(t, rpc.Method(1), Lock)
-	assert.Equal(t, rpc.Method(2), Get)
-	assert.Equal(t, rpc.Method(3), Set)
+	assert.Equal(t, rpc.Method(2), Read)
+	assert.Equal(t, rpc.Method(3), Write)
 }
 func TestCached(t *testing.T) {
 	cache, err := NewCached(nil)
@@ -35,7 +35,7 @@ func TestCached(t *testing.T) {
 	buff := &bytes.Buffer{}
 	buff.Write([]byte{0, 0, 1, 4})
 	buff.WriteString("a")
-	_, err = cache.Set(buff.Bytes())
+	_, err = cache.Write(buff.Bytes())
 	assert.NoError(t, err)
 	done.Wait()
 }
@@ -43,7 +43,7 @@ func TestCached(t *testing.T) {
 func TestGet(t *testing.T) {
 	cache, err := NewCached(nil)
 	assert.NoError(t, err)
-	resp, err := cache.Get([]byte("plop"))
+	resp, err := cache.Read([]byte("plop"))
 	assert.NoError(t, err)
 	assert.Len(t, resp, 1)
 	assert.Equal(t, byte(0), resp[0])
@@ -59,26 +59,26 @@ func TestFull(t *testing.T) {
 	opts.Max = 3
 	cache, err := NewCached(opts)
 	assert.NoError(t, err)
-	eviction, err := cache.set(&SetArg{
+	eviction, err := cache.write(&SetArg{
 		Key:  "a",
 		Size: 1,
 	})
 	assert.NoError(t, err)
 	assert.False(t, eviction)
-	eviction, err = cache.set(&SetArg{
+	eviction, err = cache.write(&SetArg{
 		Key:  "a",
 		Size: 2,
 	})
 	assert.NoError(t, err)
 	assert.False(t, eviction)
-	eviction, err = cache.set(&SetArg{
+	eviction, err = cache.write(&SetArg{
 		Key:  "b",
 		Size: 2,
 	})
 	assert.Error(t, err) // the key is not found
 	assert.False(t, eviction)
 	os.WriteFile(fmt.Sprintf("%s/a", temp), []byte{}, 0640) // lets fake the key
-	eviction, err = cache.set(&SetArg{
+	eviction, err = cache.write(&SetArg{
 		Key:  "b",
 		Size: 2,
 	})

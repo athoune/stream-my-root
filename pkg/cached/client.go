@@ -1,7 +1,7 @@
 package cached
 
 import (
-	"net"
+	"context"
 
 	"github.com/athoune/stream-my-root/pkg/rpc"
 )
@@ -10,8 +10,8 @@ type Client struct {
 	client *rpc.Client
 }
 
-func NewClient(conn net.Conn) (*Client, error) {
-	c, err := rpc.NewClient(conn)
+func NewClient(address string) (*Client, error) {
+	c, err := rpc.NewClient(address)
 	if err != nil {
 		return nil, err
 	}
@@ -20,8 +20,8 @@ func NewClient(conn net.Conn) (*Client, error) {
 	}, nil
 }
 
-func (c *Client) Lock(key string) (bool, error) {
-	r, err := c.client.Query(Lock, []byte(key))
+func (c *Client) Lock(ctx context.Context, key string) (bool, error) {
+	r, err := c.client.Query(ctx, Lock, []byte(key))
 	if err != nil {
 		return false, err
 	}
@@ -33,8 +33,9 @@ func (c *Client) Lock(key string) (bool, error) {
 	return bool(ok), err
 }
 
-func (c *Client) Get(key string) (bool, error) {
-	r, err := c.client.Query(Get, []byte(key))
+// Read
+func (c *Client) Read(ctx context.Context, key string) (bool, error) {
+	r, err := c.client.Query(ctx, Read, []byte(key))
 	if err != nil {
 		return false, err
 	}
@@ -46,7 +47,7 @@ func (c *Client) Get(key string) (bool, error) {
 	return bool(ok), err
 }
 
-func (c *Client) Set(key string, size uint32) error {
+func (c *Client) Write(ctx context.Context, key string, size uint32) error {
 	arg := SetArg{
 		Key:  key,
 		Size: size,
@@ -55,7 +56,7 @@ func (c *Client) Set(key string, size uint32) error {
 	if err != nil {
 		return err
 	}
-	r, err := c.client.Query(Set, raw)
+	r, err := c.client.Query(ctx, Write, raw)
 	if err != nil {
 		return err
 	}
