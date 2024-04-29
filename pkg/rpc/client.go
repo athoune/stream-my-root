@@ -107,6 +107,7 @@ func (c *ClientSide) Query(ctx context.Context, method Method, arg []byte) (*Res
 
 }
 
+// Client handles the raw network connection
 type Client struct {
 	network string
 	address string
@@ -125,7 +126,8 @@ func NewClient(address string) (*Client, error) {
 	}, nil
 }
 
-func (c *Client) getSession() (*yamux.Session, error) {
+// getYamuxSession lazily opens a connection, and return a multiplexed channel
+func (c *Client) getYamuxSession() (*yamux.Session, error) {
 	if c.session == nil {
 		var err error
 		var conn net.Conn
@@ -144,8 +146,17 @@ func (c *Client) getSession() (*yamux.Session, error) {
 			logger.Error(err.Error())
 			return nil, err
 		}
-		logger.Debug("Open connection", "duration", time.Since(chrono))
-		return yamux.Client(conn, nil)
+		logger = logger.With("connection duration", time.Since(chrono))
+		session, err := yamux.Client(conn, nil)
+		if err != nil {
+			return nil, err
+		}
+		ping, err := session.Ping()
+		if err != nil {
+			return nil, err
+		}
+		logger.With("ping", ping).Info("New connection")
+		c.session = session
 	}
 
 	return c.session, nil
@@ -155,31 +166,58 @@ func (c *Client) Close() error {
 	return c.session.Close()
 }
 
+func (c *Client) Ping() (time.Duration, error) {
+	session, err := c.Session()
+	if err != nil {
+		return 0, err
+	}
+	return session.stream.Session().Ping()
+}
+
+type Session struct {
+	// a yamux stream
+	stream *yamux.Stream
+}
+
+// Session returns a Stream from the multiplexed connection
 func (c *Client) Session() (*Session, error) {
-	y_session, err := c.getSession()
+	y_session, err := c.getYamuxSession()
 	if err != nil {
 		return nil, err
 	}
-	conn, err := y_session.Open()
+	stream, err := y_session.OpenStream()
 	if err != nil {
 		return nil, err
 	}
 	return &Session{
-		conn: conn,
+		stream: stream,
 	}, nil
 }
 
-type Session struct {
-	conn net.Conn
-}
-
+// Close the opened yamux stream
 func (s *Session) Close() error {
-	return s.conn.Close()
+	return s.stream.Close()
 }
 
 func (s *Session) Query(ctx context.Context, method Method, arg []byte) (*Response, error) {
-	return NewClientSide(s.conn).Query(ctx, method, arg)
+	logger := slog.Default().With("stream id", s.stream.StreamID(),
+		"local", s.stream.LocalAddr().String(),
+		"remote", s.stream.RemoteAddr().String())
+	ctx = context.WithValue(ctx, ClientContextKey("logger"), logger)
+
+	resp, err := NewClientSide(s.stream).Query(ctx, method, arg)
+
+	logger = logger.With("method", method, "arg", arg)
+	if err != nil {
+		logger.Error(err.Error())
+	} else {
+		logger.With("resp", resp).Debug("Query")
+	}
+
+	return resp, err
 }
+
+type ClientContextKey string
 
 func (c *Client) Query(ctx context.Context, method Method, arg []byte) (*Response, error) {
 	session, err := c.Session()
