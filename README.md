@@ -11,7 +11,7 @@ Lets play with this tool, containers (even tiny VM) are always fun to manipulate
 * [ ] Image is writable, with a COW and a map
 * [ ] Chunks are crypted, recipe has keys
 * [ ] Don't compress, just trimme zeros
-* [ ] Lazy download chunks with HTTP
+* [x] Lazy download chunks with HTTP
 * [ ] Build the list of needed chunks to start an image
 * [ ] Garbage collect unused chunks
 
