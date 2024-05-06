@@ -17,7 +17,7 @@ ifeq "$(CRANE_ARCH)" "amd64"
 CRANE_ARCH=x86_64
 endif
 
-build: chunk diff server server-local fsck cached
+build: chunk diff server server-local fsck cached mount
 
 test:
 	 go test \
@@ -90,6 +90,9 @@ server-local: bin
 
 debug: bin
 	go build -o bin/debug cmd/debug/debug.go
+
+mount: bin
+	go build -o bin/mount cmd/mount/mount.go
 
 img:
 	docker run \
