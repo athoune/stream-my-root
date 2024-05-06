@@ -4,13 +4,11 @@ import (
 	"context"
 	"io"
 	"os"
-	"strings"
 
 	"github.com/athoune/stream-my-root/pkg/backend"
 	"github.com/athoune/stream-my-root/pkg/backend/ro"
 	"github.com/athoune/stream-my-root/pkg/blocks"
 	"github.com/jacobsa/fuse"
-	_fuse "github.com/jacobsa/fuse"
 	"github.com/jacobsa/fuse/fuseops"
 	"github.com/jacobsa/fuse/fuseutil"
 )
@@ -48,7 +46,7 @@ var gInodeInfo = map[fuseops.InodeID]inodeInfo{
 		},
 	},
 
-	// hello
+	// img
 	imgInode: inodeInfo{
 		attributes: fuseops.InodeAttributes{
 			Nlink: 1,
@@ -63,7 +61,7 @@ type LazyBlockFS struct {
 	backend backend.Backend
 }
 
-func New(recipe *blocks.Recipe, reader *blocks.Reader) (_fuse.Server, error) {
+func New(recipe *blocks.Recipe, reader *blocks.Reader) (fuse.Server, error) {
 	backend := ro.NewROBackend(recipe, reader)
 	fs := &LazyBlockFS{
 		backend: backend,
@@ -117,10 +115,9 @@ func (f *LazyBlockFS) ReadFile(
 	ctx context.Context,
 	op *fuseops.ReadFileOp) error {
 	// Let io.ReaderAt deal with the semantics.
-	reader := strings.NewReader("Hello, world!")
 
 	var err error
-	op.BytesRead, err = reader.ReadAt(op.Dst, op.Offset)
+	op.BytesRead, err = f.backend.ReadAt(op.Dst, op.Offset)
 
 	// Special case: FUSE doesn't expect us to return io.EOF.
 	if err == io.EOF {
@@ -128,4 +125,73 @@ func (f *LazyBlockFS) ReadFile(
 	}
 
 	return err
+}
+
+func (l *LazyBlockFS) StatFS(
+	ctx context.Context,
+	op *fuseops.StatFSOp) error {
+	return nil
+}
+
+func (l *LazyBlockFS) GetInodeAttributes(
+	ctx context.Context,
+	op *fuseops.GetInodeAttributesOp) error {
+	// Find the info for this inode.
+	info, ok := gInodeInfo[op.Inode]
+	if !ok {
+		return fuse.ENOENT
+	}
+
+	// Copy over its attributes.
+	op.Attributes = info.attributes
+	if op.Inode == imgInode { // What an ugly hack
+		s, err := l.backend.Size()
+		if err != nil {
+			panic(err)
+		}
+		op.Attributes.Size = uint64(s)
+	}
+
+	return nil
+}
+
+func (l *LazyBlockFS) OpenDir(
+	ctx context.Context,
+	op *fuseops.OpenDirOp) error {
+	// Allow opening any directory.
+	return nil
+}
+
+func findChildInode(
+	name string,
+	children []fuseutil.Dirent) (fuseops.InodeID, error) {
+	for _, e := range children {
+		if e.Name == name {
+			return e.Inode, nil
+		}
+	}
+
+	return 0, fuse.ENOENT
+}
+
+func (l *LazyBlockFS) LookUpInode(
+	ctx context.Context,
+	op *fuseops.LookUpInodeOp) error {
+	// Find the info for the parent.
+	parentInfo, ok := gInodeInfo[op.Parent]
+	if !ok {
+		return fuse.ENOENT
+	}
+
+	// Find the child within the parent.
+	childInode, err := findChildInode(op.Name, parentInfo.children)
+	if err != nil {
+		return err
+	}
+
+	// Copy over information.
+	op.Entry.Child = childInode
+	op.Entry.Attributes = gInodeInfo[childInode].attributes
+
+	return nil
 }
